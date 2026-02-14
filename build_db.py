@@ -19,5 +19,73 @@ import os
 import json
 from collections import defaultdict
 import soundfile as sf
+import re
 
 from fp import to_mono, peaks_from_audio, hashes_from_peaks
+
+SONGS_DIR = "songs_wav"
+DB_DIR = "db"
+
+# Fingerprint parameters
+N_FFT = 1024
+HOP = 256
+TOP_K_PER_FRAME = 5
+FAN_VALUE = 6
+DT_MAX = 80
+
+def main():
+    os.makedirs(DB_DIR, exist_ok=True) #check existance of database directory (output)
+
+    index = defaultdict(list)   # hash -> list[(song_id, t_anchor)]
+    songs = []                  # metadata of song list
+
+    song_files = sorted([f for f in os.listdir(SONGS_DIR) if f.lower().endswith(".wav")]) #sorts all songs in songs_wav/ alphabetically, only keeps .wav files
+    if not song_files: #check for empty database (for debugging)
+        print(f"No .wav files found in {SONGS_DIR}/")
+        return
+
+    for song_id, fn in enumerate(song_files): #uses enumerate for loop to assign all songs in storage a unique song_id
+        path = os.path.join(SONGS_DIR, fn) #finds complete address of song and stores it into a string
+        x, sr = sf.read(path) #loads wav file into array 'x' with sample rate 'sr'
+        x = to_mono(x) #calls function in fp.py to convert to mono. Ignores process internally if already mono
+
+        peaks = peaks_from_audio(x, sr, n_fft=N_FFT, hop=HOP, top_k_per_frame=TOP_K_PER_FRAME) #extracts peaks from the db song into peaks[]
+        hashes = hashes_from_peaks(peaks, fan_value=FAN_VALUE, dt_max=DT_MAX) #creates hashes by pairing
+
+        for h, t_anchor in hashes: #appends each hash pair
+            index[int(h)].append((song_id, int(t_anchor)))
+
+        # Parse filename into "Artist_SongTitle" -> "Artist - SongTitle"
+        def _spacify_camel(text: str) -> str:
+            # Insert spaces before capital letters: "JustTheTwoOfUs" -> "Just The Two Of Us"
+            return re.sub(r'(?<!^)(?=[A-Z])', ' ', text)
+        base_name = os.path.splitext(fn)[0]
+        if "_" in base_name:
+            artist_part, song_part = base_name.split("_", 1)
+            artist_part = _spacify_camel(artist_part)
+            song_part = _spacify_camel(song_part)
+            display_title = f"{artist_part} - {song_part}"
+        else:
+            display_title = _spacify_camel(base_name)
+
+        songs.append({ #final data structure for songs
+            "id": song_id, #unique song id
+            "title": display_title, #formatted "Artist - Song"
+            "file": fn, #file 
+            "sr": sr #sample rate
+        })
+
+        print(f"Indexed {fn}: sr={sr} peaks={len(peaks)} hashes={len(hashes)}")
+
+    with open(os.path.join(DB_DIR, "songs.json"), "w") as f:
+        json.dump(songs, f, indent=2)  #dumps the songs[i] into the db/ directory (final database)
+
+    packed = [[h, postings] for h, postings in index.items()]
+    with open(os.path.join(DB_DIR, "index.json"), "w") as f:
+        json.dump(packed, f)
+
+    print(f"\nDone. songs={len(songs)} unique_hashes={len(index)}")
+    print(f"DB saved to {DB_DIR}/songs.json and {DB_DIR}/index.json")
+
+if __name__ == "__main__":
+    main()
