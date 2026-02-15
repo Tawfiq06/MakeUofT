@@ -23,7 +23,7 @@ import re
 
 from fp import to_mono, peaks_from_audio, hashes_from_peaks
 
-SONGS_DIR = "songs_wav"
+SONGS_DIR = "songs_wav_8k"
 DB_DIR = "db"
 
 # Fingerprint parameters

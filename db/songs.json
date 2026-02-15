@@ -3,18 +3,18 @@
     "id": 0,
     "title": "Bad Bunny - Baile Inolvidable",
     "file": "BadBunny_BaileInolvidable.wav",
-    "sr": 44100
+    "sr": 8000
   },
   {
     "id": 1,
     "title": "George Michael - Careless Whisper",
     "file": "GeorgeMichael_CarelessWhisper.wav",
-    "sr": 44100
+    "sr": 8000
   },
   {
     "id": 2,
     "title": "Grover Washington - Just The Two Of Us",
     "file": "GroverWashington_JustTheTwoOfUs.wav",
-    "sr": 44100
+    "sr": 8000
   }
 ]
