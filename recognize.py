@@ -36,6 +36,7 @@ HOP = 256
 TOP_K_PER_FRAME = 5
 FAN_VALUE = 6
 DT_MAX = 80
+MIN_MATCH_SCORE = 250  # below this, treat as not recognized
 
 def load_db():  # loads the database at /db into memory
     with open(os.path.join(DB_DIR, "songs.json"), "r") as f:
@@ -129,8 +130,22 @@ if __name__ == "__main__":
     try:
         servo = ServoController(18, 50)
 
-        if res is None:
-            print("No match.")
+        if res is None or res.get("score", 0) < MIN_MATCH_SCORE:
+            # Low-confidence or no match
+            score = 0 if res is None else res.get("score", 0)
+            print(f"Not recognized (score={score})")
+
+            # Try OLED (optional)
+            try:
+                from oled_display import display_song  # local import avoids circular import
+                display_song("Not recognized", "")
+            except Exception as e:
+                print(f"[OLED] skipped: {e}")
+
+            # Servo / love-song behavior
+            servo.set_angle(0)
+            print("Not the love song")
+
         else:
             print(f"Match: {res['full_title']} (score={res['score']})")
             if res.get("artist") and res.get("title"):
