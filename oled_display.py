@@ -2,6 +2,7 @@ import board
 import busio
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
+from recognize import recognize
 
 WIDTH = 128
 HEIGHT = 64
@@ -79,3 +80,5 @@ def display_song(title, artist):
 
     oled.image(image)
     oled.show
+    
+    print("OLED ok")

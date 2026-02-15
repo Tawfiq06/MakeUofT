@@ -47,7 +47,10 @@ def load_db(): #loads the database at /db into memory
         index[int(h)] = [(int(sid), int(t)) for sid, t in postings]
     return songs, index
 
-def recognize(query_wav, songs, index):
+def recognize(query_wav, songs=None, index=None, return_fields: bool = False):
+    if songs is None or index is None:
+        songs, index = load_db()
+
     x, sr = sf.read(query_wav) #loads the query clip
     x = to_mono(x) #normalizes the query clip
 
@@ -73,7 +76,53 @@ def recognize(query_wav, songs, index):
         return None
 
     (best_song_id, best_offset), best_score = max(votes.items(), key=lambda kv: kv[1])
-    return best_song_id, best_score #choose timeframe from song that best matches query clip's fingerprints. Returns song
+
+    if return_fields:
+        title, artist, full_title = get_title_artist(best_song_id, songs)
+        return {
+            "song_id": best_song_id,
+            "score": best_score,
+            "title": title,
+            "artist": artist,
+            "full_title": full_title,
+        }
+
+    return best_song_id, best_score  # backward-compatible
+
+def title_output(full_title: str):
+    """Split a display title into (artist, title) when possible.
+
+    Expected formats:
+    - "Artist - Song"
+    - "Artist – Song" (en dash)
+    - "Artist — Song" (em dash)
+
+    Returns (artist, title). If no separator is found, returns ("", full_title).
+    """
+    if not isinstance(full_title, str):
+        return "", ""
+
+    for sep in (" - ", " – ", " — "):
+        if sep in full_title:
+            artist, title = full_title.split(sep, 1)
+            return artist.strip(), title.strip()
+
+    return "", full_title.strip()
+
+def get_title_artist(song_id: int, songs: list) -> tuple[str, str, str]:
+    """Return (title, artist, full_title) for a song id from songs.json."""
+    if song_id is None or songs is None:
+        return "", "", ""
+    try:
+        full_title = songs[song_id].get("title", "")
+    except Exception:
+        full_title = ""
+
+    artist, title = title_output(full_title)
+    # If we couldn't split, treat entire string as title.
+    if not title:
+        title = full_title
+    return title, artist, full_title
 
 if __name__ == "__main__":
     import sys
@@ -81,11 +130,13 @@ if __name__ == "__main__":
         print("Usage: python3 recognize.py queries/clip.wav")
         raise SystemExit(1)
 
-    songs, index = load_db()
-    res = recognize(sys.argv[1], songs, index)
+    res = recognize(sys.argv[1], return_fields=True)
 
     if res is None:
         print("No match.")
     else:
-        song_id, score = res
-        print(f"Match: {songs[song_id]['title']} (score={score})")
+        print(f"Match: {res['full_title']} (score={res['score']})")
+        if res["artist"] and res["title"]:
+            print(f"Artist: {res['artist']}, Song Title: {res['title']}")
+        else:
+            print(f"Song Title: {res['full_title']}")
