@@ -74,18 +74,27 @@ def display_song(title, artist):
     image = Image.new("1", (WIDTH, HEIGHT))
     draw = ImageDraw.Draw(image)
 
-    #Wrap title
+    # Single-line title: auto-shrink font size to fit
     max_width = WIDTH - (MARGIN * 2)
-    title_lines =  _wrap_text(draw, title, title_font, max_width)
 
-    #Limit title to max 2 lines
-    title_lines = title_lines[:2]
+    # Start from the current title font size and shrink until it fits
+    size = 11
+    min_size = 6
+    fit_font = title_font
+
+    while size >= min_size:
+        try_font = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size
+        )
+        bbox = draw.textbbox((0, 0), title, font=try_font)
+        w = bbox[2] - bbox[0]
+        if w <= max_width:
+            fit_font = try_font
+            break
+        size -= 1
 
     current_y = 3
-
-    for line in title_lines:
-        height = _centre_text(draw, line, current_y, title_font)
-        current_y += height + 2 # spacing between lines
+    _centre_text(draw, title, current_y, fit_font)
 
     current_y += 4
 
@@ -97,16 +106,9 @@ def display_song(title, artist):
     oled.image(image)
     oled.show()
 
-    # Console output (match the display formatting)
-    max_width = WIDTH - (MARGIN * 2)
-    title_lines = _wrap_text(draw, title, artist_font, max_width)[:2]
-
-    if title_lines:
-        # Join multi-line titles with " / " to reflect wrapping
-        print(f"Title: {' / '.join(title_lines)}")
-        printArtist = False
-    else:
-        print("Title: ")
+    # Console output (print title as a single line, no wrapping)
+    print(f"Title: {title}")
+    printArtist = False
     print(" ")
     if printArtist:
         print(f"Artist: {artist}")
