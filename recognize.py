@@ -135,8 +135,18 @@ if __name__ == "__main__":
     if res is None:
         print("No match.")
     else:
+        # Print result
         print(f"Match: {res['full_title']} (score={res['score']})")
-        if res["artist"] and res["title"]:
+        if res.get("artist") and res.get("title"):
             print(f"Artist: {res['artist']}, Song Title: {res['title']}")
         else:
             print(f"Song Title: {res['full_title']}")
+
+        # Try OLED (optional). If the OLED isn't connected or I2C isn't available,
+        # we still want recognition to work.
+        try:
+            from oled_display import display_song  # local import avoids circular import
+            display_song(res.get("title", ""), res.get("artist", ""))
+        except Exception as e:
+            # OLED not available; ignore.
+            pass
