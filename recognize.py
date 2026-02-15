@@ -124,26 +124,33 @@ if __name__ == "__main__":
         raise SystemExit(1)
 
     res = recognize(sys.argv[1], return_fields=True)
-    servo = ServoController(18, 50)
-    if res is None:
-        print("No match.")
-    else:
-        print(f"Match: {res['full_title']} (score={res['score']})")
-        if res.get("artist") and res.get("title"):
-            print(f"Artist: {res['artist']}, Song Title: {res['title']}")
-        else:
-            print(f"Song Title: {res['full_title']}")
 
-        # Try OLED (optional)
-        try:
-            from oled_display import display_song  # local import avoids circular import
-            display_song(res.get("title", ""), res.get("artist", ""))
-        except Exception as e:
-            print(f"[OLED] skipped: {e}")
-                
-        if (res['full_title'] == LOVE_SONG):
-            servo.set_angle(90)
+    servo = None
+    try:
+        servo = ServoController(18, 50)
+
+        if res is None:
+            print("No match.")
         else:
-            servo.set_angle(0)
-            print("Not the love song")
-            
+            print(f"Match: {res['full_title']} (score={res['score']})")
+            if res.get("artist") and res.get("title"):
+                print(f"Artist: {res['artist']}, Song Title: {res['title']}")
+            else:
+                print(f"Song Title: {res['full_title']}")
+
+            # Try OLED (optional)
+            try:
+                from oled_display import display_song  # local import avoids circular import
+                display_song(res.get("title", ""), res.get("artist", ""))
+            except Exception as e:
+                print(f"[OLED] skipped: {e}")
+
+            if res['full_title'] == LOVE_SONG:
+                servo.set_angle(90)
+            else:
+                servo.set_angle(0)
+                print("Not the love song")
+
+    finally:
+        if servo is not None:
+            servo.cleanup()
