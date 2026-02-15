@@ -143,7 +143,6 @@ if __name__ == "__main__":
                 print(f"[OLED] skipped: {e}")
 
             # Servo / love-song behavior
-            servo.set_angle(0)
             print("Not the love song")
 
         else:
@@ -163,7 +162,6 @@ if __name__ == "__main__":
             if res['full_title'] == LOVE_SONG:
                 servo.set_angle(90)
             else:
-                servo.set_angle(0)
                 print("Not the love song")
 
     finally:
