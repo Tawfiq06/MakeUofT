@@ -35,14 +35,14 @@ TOP_K_PER_FRAME = 5
 FAN_VALUE = 6
 DT_MAX = 80
 
-def load_db(): #loads the database at /db into memory
-    with open(os.path.join(DB_DIR, "songs.json"), "r") as f: #loads song metadata. Ex. songs[0] = {id:0, title:"Grover Washington - Just The Two Of Us"}
+def load_db():  # loads the database at /db into memory
+    with open(os.path.join(DB_DIR, "songs.json"), "r") as f:
         songs = json.load(f)
 
-    with open(os.path.join(DB_DIR, "index.json"), "r") as f: #loads packed fingrerprint indeces
+    with open(os.path.join(DB_DIR, "index.json"), "r") as f:
         packed = json.load(f)
 
-    index = {} #copy index from .json into index for matching algorithm
+    index = {}
     for h, postings in packed:
         index[int(h)] = [(int(sid), int(t)) for sid, t in postings]
     return songs, index
@@ -51,8 +51,8 @@ def recognize(query_wav, songs=None, index=None, return_fields: bool = False):
     if songs is None or index is None:
         songs, index = load_db()
 
-    x, sr = sf.read(query_wav) #loads the query clip
-    x = to_mono(x) #normalizes the query clip
+    x, sr = sf.read(query_wav)
+    x = to_mono(x)
 
     # Automatically resample query to 8kHz to match database
     TARGET_SR = 8000
@@ -60,17 +60,17 @@ def recognize(query_wav, songs=None, index=None, return_fields: bool = False):
         x = resample_poly(x, TARGET_SR, sr).astype(np.float32)
         sr = TARGET_SR
 
-    peaks = peaks_from_audio(x, sr, n_fft=N_FFT, hop=HOP, top_k_per_frame=TOP_K_PER_FRAME) #finds peaks of query clip
-    hashes = hashes_from_peaks(peaks, fan_value=FAN_VALUE, dt_max=DT_MAX) #transforms peaks per frame to hashes per index
+    peaks = peaks_from_audio(x, sr, n_fft=N_FFT, hop=HOP, top_k_per_frame=TOP_K_PER_FRAME)
+    hashes = hashes_from_peaks(peaks, fan_value=FAN_VALUE, dt_max=DT_MAX)
 
-    votes = defaultdict(int)  # (song_id, offset) -> count. It counts how many fingerprints align in time
-    for h, t_q in hashes: #for every hash in the query clip, look through database for potential matches
-        postings = index.get(int(h)) # if it finds matching peaks, get index and use it as anchor for hash
+    votes = defaultdict(int)  # (song_id, offset) -> count
+    for h, t_q in hashes:
+        postings = index.get(int(h))
         if not postings:
             continue
         for song_id, t_db in postings:
             offset = t_db - t_q
-            votes[(song_id, offset)] += 1 #count successful matches in time frame
+            votes[(song_id, offset)] += 1
 
     if not votes:
         return None
@@ -90,15 +90,7 @@ def recognize(query_wav, songs=None, index=None, return_fields: bool = False):
     return best_song_id, best_score  # backward-compatible
 
 def title_output(full_title: str):
-    """Split a display title into (artist, title) when possible.
-
-    Expected formats:
-    - "Artist - Song"
-    - "Artist – Song" (en dash)
-    - "Artist — Song" (em dash)
-
-    Returns (artist, title). If no separator is found, returns ("", full_title).
-    """
+    """Split a display title into (artist, title) when possible."""
     if not isinstance(full_title, str):
         return "", ""
 
@@ -119,7 +111,6 @@ def get_title_artist(song_id: int, songs: list) -> tuple[str, str, str]:
         full_title = ""
 
     artist, title = title_output(full_title)
-    # If we couldn't split, treat entire string as title.
     if not title:
         title = full_title
     return title, artist, full_title
@@ -135,18 +126,15 @@ if __name__ == "__main__":
     if res is None:
         print("No match.")
     else:
-        # Print result
         print(f"Match: {res['full_title']} (score={res['score']})")
         if res.get("artist") and res.get("title"):
             print(f"Artist: {res['artist']}, Song Title: {res['title']}")
         else:
             print(f"Song Title: {res['full_title']}")
 
-        # Try OLED (optional). If the OLED isn't connected or I2C isn't available,
-        # we still want recognition to work.
+        # Try OLED (optional)
         try:
             from oled_display import display_song  # local import avoids circular import
             display_song(res.get("title", ""), res.get("artist", ""))
         except Exception as e:
-            # OLED not available; ignore.
-            pass
+            print(f"[OLED] skipped: {e}")
