@@ -24,10 +24,12 @@ import soundfile as sf
 import numpy as np
 from scipy.signal import resample_poly
 
+from servo_control import ServoController
+
 from fp import to_mono, peaks_from_audio, hashes_from_peaks
 
 DB_DIR = "db"
-
+LOVE_SONG = 'Bad Bunny - Baile Inolvidable'
 # MUST match build_db.py parameters
 N_FFT = 1024
 HOP = 256
@@ -122,7 +124,7 @@ if __name__ == "__main__":
         raise SystemExit(1)
 
     res = recognize(sys.argv[1], return_fields=True)
-
+    servo = ServoController(18, 50)
     if res is None:
         print("No match.")
     else:
@@ -138,3 +140,10 @@ if __name__ == "__main__":
             display_song(res.get("title", ""), res.get("artist", ""))
         except Exception as e:
             print(f"[OLED] skipped: {e}")
+                
+        if (res['full_title'] == LOVE_SONG):
+            servo.set_angle(90)
+        else:
+            servo.set_angle(0)
+            print("Not the love song")
+            
