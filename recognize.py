@@ -36,7 +36,7 @@ HOP = 256
 TOP_K_PER_FRAME = 5
 FAN_VALUE = 6
 DT_MAX = 80
-MIN_MATCH_SCORE = 250  # below this, treat as not recognized
+MIN_MATCH_SCORE = 200  # below this, treat as not recognized
 
 def load_db():  # loads the database at /db into memory
     with open(os.path.join(DB_DIR, "songs.json"), "r") as f:
