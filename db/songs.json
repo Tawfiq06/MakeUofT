@@ -7,14 +7,68 @@
   },
   {
     "id": 1,
+    "title": "Bon Jovi - Always_8k",
+    "file": "BonJovi_Always_8k.wav",
+    "sr": 8000
+  },
+  {
+    "id": 2,
+    "title": "Bruno Mars - Just The Way You Are",
+    "file": "BrunoMars_JustTheWayYouAre.wav",
+    "sr": 8000
+  },
+  {
+    "id": 3,
+    "title": "Coldplay - Sky Full Of Stars",
+    "file": "Coldplay_SkyFullOfStars.wav",
+    "sr": 8000
+  },
+  {
+    "id": 4,
+    "title": "Coldplay - Yellow",
+    "file": "Coldplay_Yellow.wav",
+    "sr": 8000
+  },
+  {
+    "id": 5,
+    "title": "Ed Sheeran - Perfect",
+    "file": "EdSheeran_Perfect.wav",
+    "sr": 8000
+  },
+  {
+    "id": 6,
+    "title": "Ed Sheeran - Shape Of You",
+    "file": "EdSheeran_ShapeOfYou.wav",
+    "sr": 8000
+  },
+  {
+    "id": 7,
     "title": "George Michael - Careless Whisper",
     "file": "GeorgeMichael_CarelessWhisper.wav",
     "sr": 8000
   },
   {
-    "id": 2,
+    "id": 8,
     "title": "Grover Washington - Just The Two Of Us",
     "file": "GroverWashington_JustTheTwoOfUs.wav",
+    "sr": 8000
+  },
+  {
+    "id": 9,
+    "title": "Jamus Blunt - You Are Beautiful",
+    "file": "JamusBlunt_YouAreBeautiful.wav",
+    "sr": 8000
+  },
+  {
+    "id": 10,
+    "title": "John Legend - All Of Me",
+    "file": "JohnLegend_AllOfMe.wav",
+    "sr": 8000
+  },
+  {
+    "id": 11,
+    "title": "The Police - Every Breath You Take",
+    "file": "ThePolice_EveryBreathYouTake.wav",
     "sr": 8000
   }
 ]

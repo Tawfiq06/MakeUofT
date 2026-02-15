@@ -21,6 +21,9 @@ import json
 from collections import defaultdict
 import soundfile as sf
 
+import numpy as np
+from scipy.signal import resample_poly
+
 from fp import to_mono, peaks_from_audio, hashes_from_peaks
 
 DB_DIR = "db"
@@ -47,6 +50,12 @@ def load_db(): #loads the database at /db into memory
 def recognize(query_wav, songs, index):
     x, sr = sf.read(query_wav) #loads the query clip
     x = to_mono(x) #normalizes the query clip
+
+    # Automatically resample query to 8kHz to match database
+    TARGET_SR = 8000
+    if sr != TARGET_SR:
+        x = resample_poly(x, TARGET_SR, sr).astype(np.float32)
+        sr = TARGET_SR
 
     peaks = peaks_from_audio(x, sr, n_fft=N_FFT, hop=HOP, top_k_per_frame=TOP_K_PER_FRAME) #finds peaks of query clip
     hashes = hashes_from_peaks(peaks, fan_value=FAN_VALUE, dt_max=DT_MAX) #transforms peaks per frame to hashes per index

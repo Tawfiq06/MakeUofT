@@ -21,6 +21,9 @@ from collections import defaultdict
 import soundfile as sf
 import re
 
+import numpy as np
+from scipy.signal import resample_poly
+
 from fp import to_mono, peaks_from_audio, hashes_from_peaks
 
 SONGS_DIR = "songs_wav_8k"
@@ -48,6 +51,12 @@ def main():
         path = os.path.join(SONGS_DIR, fn) #finds complete address of song and stores it into a string
         x, sr = sf.read(path) #loads wav file into array 'x' with sample rate 'sr'
         x = to_mono(x) #calls function in fp.py to convert to mono. Ignores process internally if already mono
+
+        # Automatically resample all songs to 8kHz for consistent fingerprinting
+        TARGET_SR = 8000
+        if sr != TARGET_SR:
+            x = resample_poly(x, TARGET_SR, sr).astype(np.float32)
+            sr = TARGET_SR
 
         peaks = peaks_from_audio(x, sr, n_fft=N_FFT, hop=HOP, top_k_per_frame=TOP_K_PER_FRAME) #extracts peaks from the db song into peaks[]
         hashes = hashes_from_peaks(peaks, fan_value=FAN_VALUE, dt_max=DT_MAX) #creates hashes by pairing
