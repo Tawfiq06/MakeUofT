@@ -11,6 +11,11 @@ unsigned long maxSamples = (unsigned long) sampleRate * 15;  // 15 seconds
 
 bool recording = false;
 
+// Debounce / edge detect for INPUT_PULLUP button
+bool lastButtonPressed = false;
+unsigned long lastButtonChangeMs = 0;
+const unsigned long debounceMs = 40;
+
 void setup() {
   Serial.begin(500000);
   pinMode(buttonPin, INPUT_PULLUP);
@@ -20,11 +25,32 @@ void setup() {
 
 void loop() {
 
-  if (digitalRead(buttonPin) == LOW && !recording) {
+  // Button is INPUT_PULLUP: pressed == LOW
+  bool pressedNow = (digitalRead(buttonPin) == LOW);
+  unsigned long nowMs = millis();
+
+  // debounce
+  if (pressedNow != lastButtonPressed) {
+    lastButtonChangeMs = nowMs;
+    lastButtonPressed = pressedNow;
+  }
+
+  bool stablePressed = pressedNow && (nowMs - lastButtonChangeMs) > debounceMs;
+
+  // Start recording only on a stable press while not already recording
+  if (stablePressed && !recording) {
     recording = true;
     sampleCount = 0;
     digitalWrite(recordingLedPin, HIGH);
-    delay(200);
+
+    // Burst the start marker so the Pi will catch it even if it opens serial slightly late
+    for (int i = 0; i < 25; i++) {
+      Serial.write("STRT", 4);
+      delay(2);
+    }
+
+    // small guard delay before audio starts
+    delay(20);
   }
 
   if (recording) {
@@ -50,6 +76,12 @@ void loop() {
       if (sampleCount >= maxSamples) {
         recording = false;
         digitalWrite(recordingLedPin, LOW);
+
+        // Tell the Pi the recording is complete (repeat to be robust)
+        for (int i = 0; i < 10; i++) {
+          Serial.write("DONE", 4);
+          delay(2);
+        }
       }
     }
   }
